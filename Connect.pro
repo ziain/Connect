@@ -5,8 +5,13 @@ CONFIG -= qt
 
 SOURCES += main.cpp \
    # lwconnect.cpp \
-    lwnetwork_connect.cpp
+    lwnetwork_connect.cpp \
+    #lwthread.cpp
 
 HEADERS += \
     #lwconnect.h \
-    lwnetwork_connect.h
+    lwnetwork_connect.h \
+    #lwthread.h
+
+
+LIBS += -lpthread

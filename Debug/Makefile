@@ -38,7 +38,7 @@ DISTNAME      = Connect1.0.0
 DISTDIR = /work/project/ubuntu_project/Connect/Debug/.tmp/Connect1.0.0
 LINK          = g++
 LFLAGS        = 
-LIBS          = $(SUBLIBS)  
+LIBS          = $(SUBLIBS) -lpthread 
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -638,10 +638,12 @@ compiler_clean:
 
 ####### Compile
 
-main.o: ../main.cpp 
+main.o: ../main.cpp ../lwnetwork_connect.h \
+		../lwthread.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../main.cpp
 
-lwnetwork_connect.o: ../lwnetwork_connect.cpp ../lwnetwork_connect.h
+lwnetwork_connect.o: ../lwnetwork_connect.cpp ../lwnetwork_connect.h \
+		../lwthread.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o lwnetwork_connect.o ../lwnetwork_connect.cpp
 
 ####### Install
