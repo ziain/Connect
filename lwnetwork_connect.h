@@ -24,19 +24,27 @@ extern "C"
 #define NET_DEVICE "enp3s0"
 #define DEFAULT_CONNECT_PORT 1234
 
+#define CLEAR(T) memset(T,0,sizeof(*T))
 
+
+struct stream_info {
+    char name[20];
+    char ipv4_addr[16];
+    unsigned short port;
+    unsigned short index;
+};
 
 struct socket_info{
-    std::string name;
-    unsigned int index;
+    stream_info stream;
     sockaddr_in sockaddr;
     int socket_fd;
-    unsigned long port;
-    char ipv4_addr[16];
 };
+
+
+
 typedef std::pair<std::string,socket_info*> SOCK_INFO_PAIR;
 typedef std::pair<std::string,socket_info*>* PSOCK_INFO_PAIR;
-typedef std::list<PSOCK_INFO> SOCK_LIST;
+typedef std::list<PSOCK_INFO_PAIR> SOCK_LIST;
 
 
 class KNetwork_Connect
@@ -72,8 +80,9 @@ private:
 
 private:
     socket_info local;
-    socket_info server;
+
     SOCK_LIST remote;
+    SOCK_LIST server;
 
     /* mode
      * bie[0]
@@ -91,6 +100,9 @@ private:
     bool m_bSynchronization;
     bool m_bBlocking;
     bool m_bServer;
+
+    KThread m_server_thread;
+
 
     pthread_t m_listen_thread;
     pthread_t m_server_thread;
