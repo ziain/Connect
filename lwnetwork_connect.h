@@ -3,6 +3,7 @@
 
 //#include "lwconnect.h"
 #include <list>
+#include <vector>
 #include <iostream>
 #include "lwthread.h"
 
@@ -21,7 +22,7 @@ extern "C"
 }
 
 #define NET_DEVICE "enp3s0"
-#define DEFAULT_ACCEPT_PORT 1234
+#define DEFAULT_CONNECT_PORT 1234
 
 
 
@@ -33,8 +34,8 @@ struct socket_info{
     unsigned long port;
     char ipv4_addr[16];
 };
-typedef std::pair<std::string,socket_info*> SOCK_INFO;
-typedef std::pair<std::string,socket_info*>* PSOCK_INFO;
+typedef std::pair<std::string,socket_info*> SOCK_INFO_PAIR;
+typedef std::pair<std::string,socket_info*>* PSOCK_INFO_PAIR;
 typedef std::list<PSOCK_INFO> SOCK_LIST;
 
 
@@ -70,7 +71,8 @@ private:
 
 
 private:
-    SOCK_LIST local;
+    socket_info local;
+    socket_info server;
     SOCK_LIST remote;
 
     /* mode
