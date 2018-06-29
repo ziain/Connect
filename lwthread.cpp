@@ -5,6 +5,8 @@ KThread::KThread()
     pthread_mutex_init(&m_mutex,NULL);
     pthread_cond_init(&m_cond,NULL);
     pthread_attr_init(&m_attr);
+
+    m_thread_status = THREAD_STOP;
 }
 
 KThread::~KThread()

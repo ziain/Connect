@@ -46,6 +46,10 @@ typedef std::pair<std::string,socket_info*> SOCK_INFO_PAIR;
 typedef std::pair<std::string,socket_info*>* PSOCK_INFO_PAIR;
 typedef std::list<PSOCK_INFO_PAIR> SOCK_LIST;
 
+typedef std::pair<stream_info*,KThread*> THREAD_PAIR;
+typedef std::pair<stream_info*,KThread*>* P_THREAD_PAIR;
+typedef std::vector<P_THREAD_PAIR> THREAD_LIST;
+
 
 class KNetwork_Connect
 {
@@ -62,9 +66,11 @@ public:
 
 private:
     int _create_listen();
-    int _create_server();
+    int _create_server(stream_info* remote_info);
     int _create_client();
+
     int _init_local();
+    int _init_server(socket_info* local_socket,stream_info* stream_msg,int remote_index);
 
 
 public:
@@ -83,6 +89,7 @@ private:
 
     SOCK_LIST remote;
     SOCK_LIST server;
+    THREAD_LIST thread_server;
 
     /* mode
      * bie[0]
@@ -101,11 +108,12 @@ private:
     bool m_bBlocking;
     bool m_bServer;
 
-    KThread m_server_thread;
+    int m_client_count;
+
+
 
 
     pthread_t m_listen_thread;
-    pthread_t m_server_thread;
     pthread_t m_client_thread;
 
 

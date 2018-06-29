@@ -51,9 +51,11 @@ OBJECTS_DIR   = ./
 ####### Files
 
 SOURCES       = ../main.cpp \
-		../lwnetwork_connect.cpp 
+		../lwnetwork_connect.cpp \
+		../lwthread.cpp 
 OBJECTS       = main.o \
-		lwnetwork_connect.o
+		lwnetwork_connect.o \
+		lwthread.o
 DIST          = /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/spec_pre.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/common/unix.conf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/common/linux.conf \
@@ -229,8 +231,10 @@ DIST          = /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/spec_pre.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/exceptions.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/yacc.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/lex.prf \
-		../../Connect.pro lwnetwork_connect.h ../main.cpp \
-		../lwnetwork_connect.cpp
+		../../Connect.pro lwnetwork_connect.h \
+		lwthread.h ../main.cpp \
+		../lwnetwork_connect.cpp \
+		../lwthread.cpp
 QMAKE_TARGET  = Connect
 DESTDIR       = 
 TARGET        = Connect
@@ -645,6 +649,9 @@ main.o: ../main.cpp ../lwnetwork_connect.h \
 lwnetwork_connect.o: ../lwnetwork_connect.cpp ../lwnetwork_connect.h \
 		../lwthread.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o lwnetwork_connect.o ../lwnetwork_connect.cpp
+
+lwthread.o: ../lwthread.cpp ../lwthread.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o lwthread.o ../lwthread.cpp
 
 ####### Install
 

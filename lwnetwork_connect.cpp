@@ -73,10 +73,33 @@ int KNetwork_Connect::_init_local()
 
 }
 
+int KNetwork_Connect::_init_server(socket_info* local_socket,stream_info* stream_msg,int remote_index)
+{
+    socket_info* _server_info = new socket_info;
+    CLEAR(_server_info);
+    memcpy(_server_info,local_socket,sizeof(socket_info));
+    _server_info->sockaddr.sin_port = htons(0);
+    _server_info->socket_fd = socket(AF_INET,SOCK_STREAM,m_bBlocking?0:SOCK_NONBLOCK);
+    ::bind(_server_info->socket_fd,(sockaddr*)&_server_info->sockaddr,sizeof(sockaddr));
+    _server_info->stream.port = ntohs(_server_info->sockaddr.sin_port);
+    _server_info->stream.index = remote_index;
+
+    SOCK_INFO_PAIR* server_info = new SOCK_INFO_PAIR(stream_msg->name,_server_info);
+    server.push_back(server_info);
+
+    CLEAR(stream_msg);
+    memcpy(stream_msg, local_socket->stream,sizeof(stream_info));
+    stream_msg->port = _server_info->stream.port;
+
+}
+
+
 
 void* KNetwork_Connect::listen_thread(void* arg)
 {
+    int ret = 0;
     unsigned int index = 0;
+    m_client_count = 0;
     socket_info* local_socket = &local;
     socket_info* listen_socket = new socket_info;
     CLEAR(listen_socket);
@@ -98,33 +121,19 @@ void* KNetwork_Connect::listen_thread(void* arg)
         listen(listen_socket->socket_fd,1024);
         socklen_t a = sizeof(sockaddr);
         _remote_info->socket_fd = accept(listen_socket->socket_fd, (sockaddr*)&_remote_info->sockaddr,&a);
-
-        int length = recv(_remote_info->socket_fd,(void*)&stream_msg,sizeof(stream_msg),0);
+        recv(_remote_info->socket_fd,(void*)&stream_msg,sizeof(stream_msg),0);
         memcpy(&_remote_info->stream,&stream_msg,sizeof(stream_msg));
         _remote_info->stream.index = index++;
         SOCK_INFO_PAIR* remote_info = new SOCK_INFO_PAIR(_remote_info->stream.name,_remote_info);
         remote.push_back(remote_info);
 
+        m_client_count++;
 
+        ret = _init_server(local_socket,&stream_msg,_remote_info->stream.index);
 
-        socket_info* _server_info = new socket_info;
-        CLEAR(_server_info);
-        memcpy(_server_info,local_socket,sizeof(socket_info));
-        _server_info->sockaddr.sin_port = htons(0);
-        _server_info->socket_fd = socket(AF_INET,SOCK_STREAM,m_bBlocking?0:SOCK_NONBLOCK);
-        ::bind(_server_info->socket_fd,(sockaddr*)_server_info->sockaddr,sizeof(sockaddr));
-        _server_info->stream.port = ntohs(_server_info->sockaddr.sin_port);
-        _server_info->stream.index = _remote_info->stream.index;
+        send(_remote_info->socket_fd,(void*)&stream_msg,sizeof(stream_msg),0);
 
-        SOCK_INFO_PAIR* server_info = new SOCK_INFO_PAIR(_remote_info->stream.name,_server_info);
-        server.push_back(server_info);
-
-        CLEAR(&stream_msg);
-        memcpy(&stream_msg, local_socket->stream,sizeof(stream_info));
-        stream_msg.port = _server_info->stream.port;
-
-
-        _create_server();
+        _create_server(_remote_info->stream.name);
 
     }
 
@@ -150,17 +159,17 @@ void* KNetwork_Connect::client_thread(void* arg)
     server->sockaddr.sin_family = AF_INET;
     server->sockaddr.sin_port   = htons(DEFAULT_CONNECT_PORT);
     server->sockaddr.sin_addr.s_addr = inet_addr("192.168.1.200");
-    server->stream.port = DEFAULT_CONNECT_PORT;
-    server->stream.ipv4_addr = "192.168.1.200";
     server->socket_fd = socket(AF_INET,SOCK_STREAM,m_bBlocking?0:SOCK_NONBLOCK);
+
+
+
+    if(connect(server->socket_fd,(sockaddr*)&server->sockaddr,sizeof(sockaddr)))
+        perror("connect error");
 
     stream_info request_info;
     CLEAR(&request_info);
-
-    if(connect(server->socket_fd,(sockaddr*)&server->sockaddr),sizeof(sockaddr))
-        perror("connect error");
+    memcpy(&request_info,local_socket->stream,sizeof(request_info));
     send(server->socket_fd,(void*)&request_info,sizeof(request_info),0);
-    recv();
 }
 
 
@@ -193,9 +202,15 @@ int KNetwork_Connect::_create_listen()
     pthread_create(&m_listen_thread,NULL,_listen_thread,(void*)this);
 }
 
-int KNetwork_Connect::_create_server()
+int KNetwork_Connect::_create_server(stream_info* remote_info)
 {
-    pthread_create(&m_server_thread,NULL,_server_thread,(void*)this);
+    stream_info* _remote_info = new stream_info;
+    memcpy(_remote_info,remote_info,sizof(stream_info));
+
+    THREAD_PAIR *thread_info = new THREAD_PAIR(_remote_info,new KThread);
+    thread_server.push_back(thread_info);
+    pthread_create(&thread_info->second->m_thread_id,NULL,_server_thread,(void*)thread_info);
+    delete _remote_info;
 }
 
 int KNetwork_Connect::_create_client()
