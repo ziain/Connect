@@ -27,7 +27,7 @@ extern "C"
 #define CLEAR(T) memset(T,0,sizeof(*T))
 
 
-struct stream_info {
+struct device_info {
     char name[20];
     char ipv4_addr[16];
     unsigned short port;
@@ -35,19 +35,25 @@ struct stream_info {
 };
 
 struct socket_info{
-    stream_info stream;
+    device_info device;
     sockaddr_in sockaddr;
     int socket_fd;
 };
 
 
 
-typedef std::pair<std::string,socket_info*> SOCK_INFO_PAIR;
-typedef std::pair<std::string,socket_info*>* PSOCK_INFO_PAIR;
-typedef std::list<PSOCK_INFO_PAIR> SOCK_LIST;
+typedef std::pair<int,device_info*> DEVICE_PAIR;
+typedef std::pair<int,device_info*>* PDEVICE_PAIR;
+typedef std::list<PDEVICE_PAIR> DEVICE_LIST;
 
-typedef std::pair<stream_info*,KThread*> THREAD_PAIR;
-typedef std::pair<stream_info*,KThread*>* P_THREAD_PAIR;
+typedef std::pair<int,socket_info*> SOCK_PAIR;
+typedef std::pair<int,socket_info*>* PSOCK_PAIR;
+typedef std::list<PSOCK_PAIR>   SOCK_LIST;
+
+
+
+typedef std::pair<device_info*,KThread*> THREAD_PAIR;
+typedef std::pair<device_info*,KThread*>* P_THREAD_PAIR;
 typedef std::vector<P_THREAD_PAIR> THREAD_LIST;
 
 
@@ -66,11 +72,11 @@ public:
 
 private:
     int _create_listen();
-    int _create_server(stream_info* remote_info);
+    int _create_server(int index);
     int _create_client();
 
     int _init_local();
-    int _init_server(socket_info* local_socket,stream_info* stream_msg,int remote_index);
+    int _init_server();
 
 
 public:
@@ -78,17 +84,26 @@ public:
     virtual void* server_thread(void* arg);
     virtual void* client_thread(void* arg);
 
+    void* server_send_thread(void* arg);
+    void* server_recv_thread(void* arg);
+
 private:
     static void* _listen_thread(void* arg);
     static void* _server_thread(void* arg);
     static void* _client_thread(void* arg);
 
+    static void* _server_send_thread(void* arg);
+    static void* _server_recv_thread(void* arg);
+
 
 private:
-    socket_info local;
+    device_info local;
 
-    SOCK_LIST remote;
-    SOCK_LIST server;
+    DEVICE_LIST remote_device;
+
+
+    socket_info server_socket;
+    std::vector<socket_info*> remote_socket;
     THREAD_LIST thread_server;
 
     /* mode
@@ -109,12 +124,16 @@ private:
     bool m_bServer;
 
     int m_client_count;
+    int m_remote_index;
 
 
 
 
     pthread_t m_listen_thread;
     pthread_t m_client_thread;
+
+    KThread m_send_protect;
+    KThread m_recv_protect;
 
 
 };
