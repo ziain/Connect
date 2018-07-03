@@ -98,13 +98,12 @@ private:
 
 private:
     device_info local;
-
     DEVICE_LIST remote_device;
 
 
     socket_info server_socket;
     std::vector<socket_info*> remote_socket;
-    THREAD_LIST thread_server;
+
 
     /* mode
      * bie[0]
@@ -126,7 +125,8 @@ private:
     int m_client_count;
     int m_remote_index;
 
-
+    char* send_buffer;
+    char* recv_buffer;
 
 
     pthread_t m_listen_thread;

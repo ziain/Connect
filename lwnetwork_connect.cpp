@@ -44,11 +44,18 @@ int KNetwork_Connect::Init(int mode)
 
 int KNetwork_Connect::Send(void* buf, unsigned long length)
 {
-
+    m_send_protect.Lock();
+    send_buffer = (char*)buf;
+    m_send_protect.Wake(1);
+    m_send_protect.Unlock();
 }
 
 int KNetwork_Connect::Recv(void* buf, unsigned long length)
 {
+    m_recv_protect.Lock();
+    m_recv_protect.Wait();
+    memcpy(buf,recv_buffer,1024);
+    m_recv_protect.Unlock();
 
 }
 
@@ -69,8 +76,8 @@ int KNetwork_Connect::_init_local()
         close(sock_fd);
         return -1;
     }
-    sockaddr_in _sockaddr_in =(sockaddr_in*) &ifr.ifr_ifru.ifru_addr;
-    strncpy(local.ipv4_addr,inet_ntoa(_sockaddr_in.sin_addr),16);
+    sockaddr_in* _sockaddr_in =(sockaddr_in*) &ifr.ifr_ifru.ifru_addr;
+    strncpy(local.ipv4_addr,inet_ntoa(_sockaddr_in->sin_addr),16);
     local.index = 0;
     local.port = 0;
     close(sock_fd);
@@ -112,7 +119,7 @@ void* KNetwork_Connect::listen_thread(void* arg)
         CLEAR(&deivce_msg);
 
         socket_info remote_info;
-        CLEAR(remote_info);
+        CLEAR(&remote_info);
 
         listen(listen_socket->socket_fd,1024);
         socklen_t a = sizeof(sockaddr);
@@ -132,7 +139,6 @@ void* KNetwork_Connect::listen_thread(void* arg)
         _create_server(_remote_device->index);
 
 
-
         m_client_count++;
 
 
@@ -143,7 +149,6 @@ void* KNetwork_Connect::listen_thread(void* arg)
 
 void* KNetwork_Connect::server_thread(void* arg)
 {
-    socket_info* local_socket = &local;
 
 
 
@@ -153,7 +158,6 @@ void* KNetwork_Connect::server_thread(void* arg)
 
 void* KNetwork_Connect::client_thread(void* arg)
 {
-    socket_info* local_socket = &local;
     socket_info* server = new socket_info;
     CLEAR(server);
 
@@ -162,15 +166,36 @@ void* KNetwork_Connect::client_thread(void* arg)
     server->sockaddr.sin_addr.s_addr = inet_addr("192.168.1.200");
     server->socket_fd = socket(AF_INET,SOCK_STREAM,m_bBlocking?0:SOCK_NONBLOCK);
 
-
-
     if(connect(server->socket_fd,(sockaddr*)&server->sockaddr,sizeof(sockaddr)))
         perror("connect error");
 
     device_info request_info;
     CLEAR(&request_info);
-    memcpy(&request_info,local_socket->device,sizeof(request_info));
+    memcpy(&request_info,&local,sizeof(request_info));
     send(server->socket_fd,(void*)&request_info,sizeof(request_info),0);
+
+    device_info *remote_info = new device_info;
+    CLEAR(&remote_info);
+
+    recv(server->socket_fd,(void*)remote_info,sizeof(device_info),0);
+
+    remote_device.push_back(new DEVICE_PAIR(0,remote_info));
+    close(server->socket_fd);
+
+    server->sockaddr.sin_port = htons(remote_info->port);
+    if(connect(server->socket_fd,(sockaddr*)&server->sockaddr,sizeof(sockaddr)))
+        perror("connect error");
+    while(1)
+    {
+        char msg[1024];
+        CLEAR(msg);
+        recv(server->socket_fd,(void*)msg,1024,0);
+
+        m_recv_protect.Lock();
+        recv_buffer = msg;
+        m_recv_protect.Wake(0);
+        m_recv_protect.Unlock();
+    }
 }
 
 
@@ -178,16 +203,16 @@ void* KNetwork_Connect::client_thread(void* arg)
 
 void* KNetwork_Connect::server_send_thread(void* arg)
 {
-    socket_info* remote_socket = remote_socket[m_remote_index];
+    socket_info* _remote_socket = remote_socket[m_remote_index];
     char msg[1024];
     while(1)
     {
 
         m_send_protect.Lock();
         m_send_protect.Wait(0);
-        memcpy(msg,)
+        memcpy(msg,send_buffer,1024);
         m_send_protect.Unlock();
-        send(remote_socket->socket_fd,(void*)msg,sizeof(msg),0);
+        send(_remote_socket->socket_fd,(void*)msg,sizeof(msg),0);
     }
 
 }
@@ -196,8 +221,16 @@ void* KNetwork_Connect::server_send_thread(void* arg)
 
 void* KNetwork_Connect::server_recv_thread(void* arg)
 {
-    socket_info* remote_socket = server[m_client_count];
-
+    socket_info* _remote_socket = remote_socket[m_remote_index];
+    char msg[1024];
+    while(1)
+    {
+        recv(_remote_socket->socket_fd,(void*)msg,sizeof(msg),0);
+        m_recv_protect.Lock();
+        recv_buffer = msg;
+        m_recv_protect.Wake(0);
+        m_recv_protect.Unlock();
+    }
 }
 
 
@@ -245,9 +278,9 @@ int KNetwork_Connect::_create_listen()
 int KNetwork_Connect::_create_server(int index)
 {
     socket_info* _remote_socket = new socket_info;
-    listen(server_socket,1024);
+    listen(server_socket.socket_fd,1024);
     socklen_t size = (socklen_t)sizeof(sockaddr);
-    _remote_socket->socket_fd = accept(server_socket,(sockaddr*)_remote_socket,&size);
+    _remote_socket->socket_fd = accept(server_socket.socket_fd,(sockaddr*)_remote_socket,&size);
     _remote_socket->device.index = index;
     m_remote_index = index;
     remote_socket.push_back(_remote_socket);
@@ -255,7 +288,7 @@ int KNetwork_Connect::_create_server(int index)
 
 
 
-    int send_thread_id,recv_thread_id;
+    pthread_t send_thread_id,recv_thread_id;
     pthread_create(&send_thread_id,NULL,_server_send_thread,(void*)this);
     pthread_create(&recv_thread_id,NULL,_server_recv_thread,(void*)this);
 

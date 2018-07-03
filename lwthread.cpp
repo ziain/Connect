@@ -25,7 +25,7 @@ void KThread::Unlock()
     pthread_mutex_unlock(&m_mutex);
 }
 
-void KThread::Wait(int timeout = 0)
+void KThread::Wait(int timeout)
 {
     if(timeout)
     {
