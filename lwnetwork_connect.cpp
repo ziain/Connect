@@ -246,6 +246,7 @@ void* KNetwork_Connect::client_thread(void* arg)
     close(server->socket_fd);
 
     server->sockaddr.sin_port = htons(remote_info->port);
+    server->socket_fd = socket(AF_INET,SOCK_STREAM,m_bBlocking?0:SOCK_NONBLOCK);
     if(connect(server->socket_fd,(sockaddr*)&server->sockaddr,sizeof(sockaddr)))
         perror("connect error");
     while(1)

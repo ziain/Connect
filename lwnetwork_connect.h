@@ -31,21 +31,23 @@ extern "C"
 
 #define NET_ASSERT(exp,log) \
 do{ \
-if(!!exp)   \
-NET_LOGE(log);   \
+    if(!!exp)   \
+    NET_LOGE(log);   \
 }while(0);
 
 
 #define NET_ASSERT_RET_INT(exp,log) \
 do{ \
-NET_ASSERT(exp,log)\
-return -1;   \
+    if(!!exp)   \
+    {NET_LOGE(log);   \
+    return -1;}  \
 }while(0);
 
 #define NET_ASSERT_RET_BOOL(exp,log) \
 do{ \
-NET_ASSERT(exp,log) \
-return false;   \
+    if(!!exp)   \
+    {NET_LOGE(log);   \
+    return -1;}  \
 }while(0);
 
 
@@ -54,8 +56,8 @@ return false;   \
 #define NET_THREAD_ASSERT_EXIT(exp,log) \
 do{ \
 if(!!exp)   \
-NET_LOGE(log);   \
-pthread_exit((void*)-1); \
+    {NET_LOGE(log);   \
+    pthread_exit((void*)-1);}   \
 }while(0);
 
 #endif
