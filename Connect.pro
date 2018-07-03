@@ -13,5 +13,8 @@ HEADERS += \
     lwnetwork_connect.h \
     lwthread.h
 
+include (./3rd/3rd.pri)
 
 LIBS += -lpthread
+
+DEFINES += LOG_OPEN

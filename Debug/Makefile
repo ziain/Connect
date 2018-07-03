@@ -12,10 +12,10 @@ MAKEFILE      = Makefile
 
 CC            = gcc
 CXX           = g++
-DEFINES       = -DQT_QML_DEBUG
+DEFINES       = -DLOG_OPEN -DQT_QML_DEBUG
 CFLAGS        = -pipe -g -Wall -W -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -g -std=gnu++11 -Wall -W -fPIC $(DEFINES)
-INCPATH       = -I../../Connect -I. -I/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/linux-g++
+INCPATH       = -I../../Connect -I. -I../3rd -I/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/linux-g++
 QMAKE         = /home/ziain/Qt5.9.5/5.9.5/gcc_64/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -52,10 +52,12 @@ OBJECTS_DIR   = ./
 
 SOURCES       = ../main.cpp \
 		../lwnetwork_connect.cpp \
-		../lwthread.cpp 
+		../lwthread.cpp \
+		../3rd/log4z/log4z.cpp 
 OBJECTS       = main.o \
 		lwnetwork_connect.o \
-		lwthread.o
+		lwthread.o \
+		log4z.o
 DIST          = /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/spec_pre.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/common/unix.conf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/common/linux.conf \
@@ -221,6 +223,8 @@ DIST          = /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/spec_pre.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/exclusive_builds.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/toolchain.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/default_pre.prf \
+		../../3rd/log4z/log4z.pri \
+		../../3rd/3rd.pri \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/resolve_config.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/default_post.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/qml_debug.prf \
@@ -232,9 +236,12 @@ DIST          = /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/spec_pre.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/yacc.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/lex.prf \
 		../../Connect.pro lwnetwork_connect.h \
-		lwthread.h ../main.cpp \
+		lwthread.h \
+		/work/project/ubuntu_project/Connect/3rd/log4z/log4z.h \
+		/work/project/ubuntu_project/Connect/3rd/log4z/LwLogger.h ../main.cpp \
 		../lwnetwork_connect.cpp \
-		../lwthread.cpp
+		../lwthread.cpp \
+		../3rd/log4z/log4z.cpp
 QMAKE_TARGET  = Connect
 DESTDIR       = 
 TARGET        = Connect
@@ -411,6 +418,8 @@ Makefile: ../Connect.pro /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/linux-g++/qmak
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/exclusive_builds.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/toolchain.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/default_pre.prf \
+		../3rd/log4z/log4z.pri \
+		../3rd/3rd.pri \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/resolve_config.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/default_post.prf \
 		/home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/qml_debug.prf \
@@ -588,6 +597,8 @@ Makefile: ../Connect.pro /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/linux-g++/qmak
 /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/exclusive_builds.prf:
 /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/toolchain.prf:
 /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/default_pre.prf:
+../3rd/log4z/log4z.pri:
+../3rd/3rd.pri:
 /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/resolve_config.prf:
 /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/default_post.prf:
 /home/ziain/Qt5.9.5/5.9.5/gcc_64/mkspecs/features/qml_debug.prf:
@@ -643,15 +654,22 @@ compiler_clean:
 ####### Compile
 
 main.o: ../main.cpp ../lwnetwork_connect.h \
-		../lwthread.h
+		../lwthread.h \
+		../3rd/log4z/LwLogger.h \
+		../3rd/log4z/log4z.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o ../main.cpp
 
 lwnetwork_connect.o: ../lwnetwork_connect.cpp ../lwnetwork_connect.h \
-		../lwthread.h
+		../lwthread.h \
+		../3rd/log4z/LwLogger.h \
+		../3rd/log4z/log4z.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o lwnetwork_connect.o ../lwnetwork_connect.cpp
 
 lwthread.o: ../lwthread.cpp ../lwthread.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o lwthread.o ../lwthread.cpp
+
+log4z.o: ../3rd/log4z/log4z.cpp ../3rd/log4z/log4z.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o log4z.o ../3rd/log4z/log4z.cpp
 
 ####### Install
 
