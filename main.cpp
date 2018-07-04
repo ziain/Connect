@@ -15,8 +15,10 @@ int main()
     while(1)
     {
         sprintf(send_msg,"it is service the %d times calling you",count++);
+        std::cout<<send_msg<<std::endl;
         connect.Send(send_msg,1024);
-        sleep(1);
+
+        usleep(33333);
     }
 
 }

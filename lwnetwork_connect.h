@@ -67,6 +67,7 @@ if(!!exp)   \
 
 #define CLEAR(T) memset(T,0,sizeof(*T))
 
+class KNetwork_Connect;
 
 struct device_info {
     char name[20];
@@ -80,6 +81,16 @@ struct socket_info{
     sockaddr_in sockaddr;
     int socket_fd;
 };
+
+struct thread_info{
+    int device_index;
+    int socket_fd;
+    pthread_t thread_id[2];
+    KNetwork_Connect *connect;
+};
+
+
+
 
 
 
@@ -98,6 +109,9 @@ typedef std::pair<device_info*,KThread*>* P_THREAD_PAIR;
 typedef std::vector<P_THREAD_PAIR> THREAD_LIST;
 
 
+
+
+
 class KNetwork_Connect
 {
 public:
@@ -110,25 +124,26 @@ public:
     virtual int Recv(void* buf, unsigned long length);
 
     int GetDeviceCount();
-
+    void thread_clean(thread_info* thread);
 
 
 private:
     int _create_listen();
-    int _create_server(int index);
+    int _create_server(device_info &remote_device_info);
     int _create_client();
 
     int _init_local();
     int _init_server();
 
+    //void thread_clean(thread_info* thread);
+
 
 public:
-    virtual void* listen_thread(void* arg);
-    virtual void* server_thread(void* arg);
-    virtual void* client_thread(void* arg);
+    void* listen_thread(void* arg);
+//    virtual void* server_thread(void* arg);
+    void* client_thread(void* arg);
 
-    void* server_send_thread(void* arg);
-    void* server_recv_thread(void* arg);
+
 
 private:
     static void* _listen_thread(void* arg);
@@ -147,12 +162,15 @@ public:
 
 
 private:
-    device_info local;
-    DEVICE_LIST remote_device;
+    device_info m_local_device;
+    DEVICE_LIST m_remote_device_list;
 
 
-    socket_info server_socket;
-    std::vector<socket_info*> remote_socket;
+    sockaddr_in m_server_socket;
+    device_info m_server_device;
+    int m_server_socket_fd;
+
+
 
 
     /* mode
@@ -173,22 +191,35 @@ private:
     bool m_bServer;
 
 
-    int m_remote_index;
     int m_client_count;
+    int m_remote_index;
 
-    char send_buffer[1024];
-    char recv_buffer[1024];
+
 
 
     pthread_t m_listen_thread;
     pthread_t m_client_thread;
 
-    KThread m_send_protect;
-    KThread m_recv_protect;
+
 
     KThread m_client_count_proetct;
+    KThread m_remote_device_list_protect;
 
 
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif // NETWORK_CONNECT_H
